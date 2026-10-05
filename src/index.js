@@ -1,8 +1,3 @@
-import { createApi } from "./v6/index.js";
+import tally from "./v7/index.js";
 
-const createTallyClient = (options = {}) => createApi(options);
-
-const tally = createTallyClient();
-
-export { createTallyClient, tally };
 export default tally;
