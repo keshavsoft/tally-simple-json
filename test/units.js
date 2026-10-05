@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { findEndpoint, parseArgs } from "../bin/tally-simple.js";
+import { findEndpoint, parseArgs } from "../bin/tally-simple-json.js";
 
 test("CLI parses a path and repeated headers", () => {
     assert.deepEqual(

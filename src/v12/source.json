@@ -1,0 +1,34 @@
+{
+    "tally": {
+        "masters": {
+            "units": {
+                "fetch": {
+                    "action": "fetch",
+                    "resource": "Unit",
+                    "description": "Fetches units master from Tally."
+                }
+            },
+            "stockItems": {
+                "withBatches": {
+                    "action": "fetch",
+                    "resource": "StockItem",
+                    "description": "Fetches stock items with batch allocations from Tally."
+                }
+            },
+            "ledgers": {
+                "withGstDetails": {
+                    "action": "fetch",
+                    "resource": "Ledger",
+                    "description": "Fetches ledgers with GST registration details from Tally."
+                }
+            },
+            "stockGroup": {
+                "withParent": {
+                    "action": "fetch",
+                    "resource": "StockGroup",
+                    "description": "Fetches stock groups with parent details from Tally."
+                }
+            }
+        }
+    }
+}

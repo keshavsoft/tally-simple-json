@@ -1,3 +1,3 @@
-import tally from "./v10/index.js";
+import tally from "./v12/index.js";
 
 export default tally;

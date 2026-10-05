@@ -1,6 +1,6 @@
 {
     "name": "tally-simple-json",
-    "version": "1.5.1",
+    "version": "1.12.1",
     "description": "A small, typed JavaScript client and CLI for querying Tally through TDL definitions.",
     "homepage": "https://github.com/keshavsoft/tally-simple-json#readme",
     "repository": {
