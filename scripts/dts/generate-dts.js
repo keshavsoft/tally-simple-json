@@ -16,5 +16,5 @@ const declaration = renderDeclaration(definition);
 fs.writeFileSync(outputFile, declaration, "utf8");
 
 console.log(
-    `Generated src/index.d.ts from ${activeVersion.name}/external-api/api.json and ${activeVersion.name}/source.json`
+    `Generated src/index.d.ts from ${definition.apiReference} and ${definition.sourceReference}`
 );

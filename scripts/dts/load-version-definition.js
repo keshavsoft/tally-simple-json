@@ -1,5 +1,8 @@
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+
+const require = createRequire(import.meta.url);
 
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 
@@ -9,17 +12,36 @@ const getByPath = (object, pathString) => pathString.split(".").reduce(
 );
 
 const loadVersionDefinition = (version) => {
-    const apiFile = path.join(version.directory, "external-api", "api.json");
     const apiModuleFile = path.join(version.directory, "external-api", "api.js");
+    const localApiFile = path.join(version.directory, "external-api", "api.json");
     const versionIndexFile = path.join(version.directory, "index.js");
-    const sourceFile = path.join(version.directory, "source.json");
+    const localSourceFile = path.join(version.directory, "source.json");
 
-    for (const requiredFile of [
-        versionIndexFile,
+    let apiFile = localApiFile;
+    let sourceFile = localSourceFile;
+    let apiReference = `src/${version.name}/external-api/api.json`;
+    let sourceReference = `src/${version.name}/source.json`;
+
+    const hasLocalDefinition = [
         apiModuleFile,
-        apiFile,
-        sourceFile
-    ]) {
+        localApiFile,
+        localSourceFile
+    ].every((file) => fs.existsSync(file));
+
+    if (!hasLocalDefinition) {
+        try {
+            apiFile = require.resolve("tally-spec/api.json");
+            sourceFile = require.resolve("tally-spec/source.json");
+            apiReference = "tally-spec/api.json";
+            sourceReference = "tally-spec/source.json";
+        } catch {
+            throw new Error(
+                `Active version ${version.name} is missing its local definition files and tally-spec is not available.`
+            );
+        }
+    }
+
+    for (const requiredFile of [versionIndexFile, apiFile, sourceFile]) {
         if (!fs.existsSync(requiredFile)) {
             throw new Error(`Active version ${version.name} is missing ${requiredFile}`);
         }
@@ -74,6 +96,8 @@ const loadVersionDefinition = (version) => {
         version,
         apiFile,
         sourceFile,
+        apiReference,
+        sourceReference,
         apiPaths,
         rootName,
         tree
