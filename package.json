@@ -34,10 +34,7 @@
     ],
     "scripts": {
         "generate:dts": "create-intellisense",
-        "test": "node --test test/test.js test/units.js",
-        "verify": "npm run generate:dts && npm test",
-        "prepack": "npm run verify",
-        "prepublishOnly": "npm run verify"
+        "test": "node --test test/test.js test/units.js"
     },
     "keywords": [
         "tally",
