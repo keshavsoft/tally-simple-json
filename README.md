@@ -1,127 +1,114 @@
-# Tally Simple
+# tally-simple-json
 
-[![npm version](https://img.shields.io/npm/v/tally-simple.svg)](https://www.npmjs.com/package/tally-simple)
-[![license](https://img.shields.io/npm/l/tally-simple.svg)](https://github.com/keshavsoft/tally-simple/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/tally-simple-json.svg)](https://www.npmjs.com/package/tally-simple-json)
+[![license](https://img.shields.io/npm/l/tally-simple-json.svg)](https://github.com/keshavsoft/tally-simple-json/blob/main/LICENSE)
 
-Tally Simple is a small, typed JavaScript client and CLI for asking Tally for business data.
+A clean, modern JavaScript client for querying Tally and receiving structured **JSON** responses.
 
-Choose a supported query, provide the company name, and receive Tally's response as XML. The same query paths work in an application and from a shell, so a quick experiment can grow into an automated job without changing the request model.
+---
 
-**[View the package on npm](https://www.npmjs.com/package/tally-simple)** · **[Open the visual guide](docs/index.html)**
+## How It Works
 
-## The story in one minute
+`tally-simple-json` is a lightweight JSON wrapper built on top of [`tally-xml-tdl`](https://www.npmjs.com/package/tally-xml-tdl):
 
-Tally Simple sits between your code or shell and a Tally HTTP endpoint:
+```text
+Your App
+   │
+   ▼
+tally-simple-json
+   │  delegates queries
+   ▼
+tally-xml-tdl ───> tally-extract ───> Tally HTTP Server (port 9000)
+   │                                           │
+   │  receives raw XML                         ▼
+   ▼                                    XML Response
+fast-xml-parser ({ ignoreAttributes: false })
+   │
+   ▼
+Pure JSON Object returned to your app
+```
 
-~~~text
-your app / shell command
-          │  choose a public query + company
-          ▼
-       Tally Simple
-          │  builds the XML request
-          ▼
-    Tally HTTP endpoint
-          │
-          ▼
-     XML response text
-~~~
+We do not alter queries or invent schema routes. We consume `tally-xml-tdl` directly to fetch the exact TDL XML response, parse it via `fast-xml-parser`, and return clean JSON.
 
-It deliberately keeps the response raw. You can inspect it, save it, pipe it to another tool, or parse it with the XML library your application already uses.
+---
 
-## Requirements
+## Installation
 
-- Node.js 20.10 or newer
-- A Tally HTTP endpoint that accepts the request, usually http://localhost:9000
+```bash
+npm install tally-simple-json
+```
 
-Tally Simple returns Tally's response body as XML text.
+Requirements:
+- Node.js >= 20.10
+- Tally ERP9 / Tally Prime running locally with XML/HTTP server enabled (default `http://localhost:9000`)
 
-## Install
+---
 
-~~~bash
-npm install tally-simple
-~~~
+## API & Usage
 
-The package has no runtime dependencies and requires Node.js 20.10 or newer.
+```javascript
+import { company, masters, vouchers } from "tally-simple-json";
+```
 
-## Use it in JavaScript
+### 1. `company()`
+Fetches active company metadata from Tally.
+- **Inputs**: Exactly **0 inputs**.
+- **Returns**: `Promise<object>`
 
-~~~js
-import tally from "tally-simple";
+```javascript
+import { company } from "tally-simple-json";
 
-const xml = await tally.masters.units.fetch("Mani9");
-console.log(xml);
-~~~
+const res = await company();
+console.log(res.ENVELOPE);
+```
 
-The default import is a ready-to-use client. For a different endpoint, headers, timeout, or fetch implementation, use `createTallyClient()`:
+---
 
-~~~js
-import { createTallyClient } from "tally-simple";
+### 2. `masters(path, company)`
+Fetches master collections (Units, Ledgers, Stock Items, Groups, etc.).
+- **Inputs**: Exactly **2 inputs**:
+  - `path` *(string)*: Master route (e.g., `"units.all"`, `"stockItems.withBatches"`, `"ledgers.withGstDetails"`).
+  - `company` *(string)*: Target Tally company name (e.g., `"mani9"`).
+- **Returns**: `Promise<object>`
 
-const tally = createTallyClient({
-    url: "http://localhost:9000",
-    timeout: 15_000
-});
+```javascript
+import { masters } from "tally-simple-json";
 
-const xml = await tally.masters.ledgers.withGstDetails("Mani9");
-~~~
+const res = await masters("units.all", "mani9");
+console.log(res.ENVELOPE.BODY.DATA.COLLECTION);
+```
 
-## Use it from the command line
+---
 
-Run a query with npm's command runner:
+### 3. `vouchers(path, company, fromDate, toDate)`
+Fetches vouchers for a specified date range.
+- **Inputs**: Exactly **4 inputs**:
+  - `path` *(string)*: Voucher route (e.g., `"sales.fetch"`, `"purchases.fetch"`).
+  - `company` *(string)*: Target Tally company name (e.g., `"mani9"`).
+  - `fromDate` *(string)*: Start date in `YYYYMMDD` format (e.g., `"20260401"`).
+  - `toDate` *(string)*: End date in `YYYYMMDD` format (e.g., `"20260430"`).
+- **Returns**: `Promise<object>`
 
-~~~bash
-npx tally-simple masters.units.fetch --company Mani9
-~~~
+```javascript
+import { vouchers } from "tally-simple-json";
 
-You can also include the root name:
+const res = await vouchers("sales.fetch", "mani9", "20260401", "20260430");
 
-~~~bash
-npx tally-simple tally.masters.stockItems.withBatches \
-    --company Mani9 \
-    --url http://localhost:9000
-~~~
+const voucherList = res.ENVELOPE.BODY.DATA.COLLECTION.VOUCHER;
+console.log(`Found ${voucherList.length} vouchers:`);
+console.log(voucherList[0]);
+```
 
-The response is written to stdout, so it can be saved or piped:
+---
 
-~~~bash
-npx tally-simple masters.ledgers.withGstDetails --company Mani9 > ledgers.xml
-~~~
+## Key Features
 
-For environment-based use:
+- **Direct Delegation**: Delegates route resolution and schema validation to `tally-xml-tdl`.
+- **Full Attribute Preservation**: Retains XML attributes (such as `@_TYPE`) using `fast-xml-parser` with `{ ignoreAttributes: false }`.
+- **Zero Config**: Ready to query your local Tally out of the box.
 
-~~~bash
-TALLY_COMPANY=Mani9 TALLY_URL=http://localhost:9000 \
-    npx tally-simple masters.units.fetch
-~~~
+---
 
-Run npx tally-simple --help to see all CLI options.
+## License
 
-In PowerShell, environment variables use this form:
-
-~~~powershell
-$env:TALLY_COMPANY = "Mani9"
-$env:TALLY_URL = "http://localhost:9000"
-npx tally-simple masters.units.fetch
-~~~
-
-## Available queries
-
-| Query | Returns |
-| --- | --- |
-| masters.units.fetch | Units and their aliases |
-| masters.stockItems.withBatches | Stock items, base units, and batch allocations |
-| masters.ledgers.withGstDetails | Ledgers and GST registration details |
-| masters.stockGroup.withParent | Stock groups and their parent groups |
-
-Every query accepts one company name. Blank company names are rejected before a request is sent. HTTP errors include the status and response body.
-
-## Choose your next step
-
-- [JavaScript usage](docs/usage.md): configure the client, test without Tally, and use TypeScript.
-- [CLI reference](docs/cli.md): see options, environment variables, piping, and errors.
-- [Available query paths](docs/api.md): see the public API and the TDL each path requests.
-- [Architecture story](docs/architecture.md): see how one definition drives the client and CLI.
-- [Developer guide](docs/development.md): see versioning, declaration generation, and verification.
-- [Visual guide](docs/index.html): a dependency-free HTML walkthrough of the same flow.
-
-The source code is on [GitHub](https://github.com/keshavsoft/tally-simple), and the published package is on [npm](https://www.npmjs.com/package/tally-simple).
+MIT © KeshavSoft
