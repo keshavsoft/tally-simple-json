@@ -1,2 +1,2 @@
-export { company, masters, vouchers } from "./v31/index.js";
-export { default } from "./v31/index.js";
+export { company, masters, vouchers, reports } from "./v32/index.js";
+export { default } from "./v32/index.js";
